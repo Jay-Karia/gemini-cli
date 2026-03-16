@@ -9,6 +9,7 @@ import { hideBin } from 'yargs/helpers';
 import process from 'node:process';
 import * as path from 'node:path';
 import { mcpCommand } from '../commands/mcp.js';
+import { doctorCommand } from '../commands/doctor.js';
 import { extensionsCommand } from '../commands/extensions.js';
 import { skillsCommand } from '../commands/skills.js';
 import { hooksCommand } from '../commands/hooks.js';
@@ -299,6 +300,7 @@ export async function parseArguments(
           description: 'Suppress the security warning when using --raw-output.',
         }),
     )
+    .command(doctorCommand)
     // Register MCP subcommands
     .command(mcpCommand)
     // Ensure validation flows through .fail() for clean UX
