@@ -5,9 +5,27 @@
  */
 
 import type { CommandModule, Argv } from 'yargs';
+import fs from 'node:fs';
 import { initializeOutputListenersAndFlush } from '../gemini.js';
-import { debugLogger } from '@google/gemini-cli-core';
+import { debugLogger, getErrorMessage } from '@google/gemini-cli-core';
 import { exitCli } from './utils.js';
+import { loadSettings } from '../config/settings.js';
+
+// Checks whether a settings file exists and displays appropriate message.
+function checkSettingsFile(label: string, filePath: string): void {
+  if (!filePath) {
+    debugLogger.log(
+      `ℹ ${label}: skipped (workspace settings are disabled in the home directory)`,
+    );
+    return;
+  }
+
+  if (fs.existsSync(filePath)) {
+    debugLogger.log(`✅ ${label}: found (${filePath})`);
+  } else {
+    debugLogger.log(`⚠ ${label}: not found (${filePath})`);
+  }
+}
 
 export const doctorCommand: CommandModule = {
   command: 'doctor',
@@ -20,7 +38,25 @@ export const doctorCommand: CommandModule = {
       })
       .version(false),
   handler: async () => {
-    debugLogger.log('Doctor command placeholder.');
-    await exitCli();
+    try {
+      debugLogger.log('Running diagnostics...\n');
+
+      // Load settings to check for their presence and display their status
+      const loadedSettings = loadSettings(process.cwd());
+
+      const userSettingsFile = loadedSettings.user.path;
+      const workspaceSettingsFile = loadedSettings.workspace.path;
+      const systemSettingsFile = loadedSettings.system.path;
+
+      // Check settings files
+      checkSettingsFile('User settings', userSettingsFile);
+      checkSettingsFile('Project settings', workspaceSettingsFile);
+      checkSettingsFile('System settings', systemSettingsFile);
+
+      await exitCli();
+    } catch (error) {
+      debugLogger.error(`Doctor failed: ${getErrorMessage(error)}`);
+      await exitCli(1);
+    }
   },
 };
